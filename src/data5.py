@@ -1,4 +1,4 @@
-# data5.py —— 读取图到 (A_target, T_target, widths, s_vec, total_T)
+# data5.py —— read graph (A_target, T_target, widths, s_vec, total_T)
 from __future__ import annotations
 from pathlib import Path
 from typing import Tuple, List, Dict, Any
@@ -13,7 +13,7 @@ from networkx.readwrite import json_graph
 from utils5 import topological_layers
 from config5 import NORM_N, NORM_E, NORM_L, NORM_W, NORM_T
 
-# 支持多种时间键（你的参考图是 label）
+
 TIME_KEYS = ["critical_time", "time", "weight", "t", "C", "label"]
 
 def edge_time_from_attr(d: dict, default: float = 1.0) -> float:
@@ -25,10 +25,10 @@ def edge_time_from_attr(d: dict, default: float = 1.0) -> float:
                 pass
     return float(default)
 
-# ---------- 读图（稳健） ----------
+
 def _read_gpickle_any(p: Path):
     try:
-        from networkx.readwrite.gpickle import read_gpickle as _rg  # 某些版本没有
+        from networkx.readwrite.gpickle import read_gpickle as _rg  
         return _rg(p)
     except Exception:
         opener = gzip.open if str(p).endswith(".gz") else open
@@ -45,9 +45,9 @@ def read_graph_any(p: Path) -> nx.DiGraph:
         G = G.to_directed()
     return G
 
-# ---------- 图 -> 矩阵 ----------
+
 def graph_to_mats(G: nx.DiGraph) -> Tuple[torch.Tensor, torch.Tensor, List[int], torch.Tensor, float]:
-    assert nx.is_directed_acyclic_graph(G), "图必须是 DAG"
+    assert nx.is_directed_acyclic_graph(G), "must DAG"
 
     layers = topological_layers(G)
     widths = [len(Li) for Li in layers]
@@ -64,7 +64,7 @@ def graph_to_mats(G: nx.DiGraph) -> Tuple[torch.Tensor, torch.Tensor, List[int],
     for u, v, d in G.edges(data=True):
         i, j = idx_map[u], idx_map[v]
         A[i, j] = 1.0
-        t = edge_time_from_attr(d, 1.0)  # 关键：label 作为时间
+        t = edge_time_from_attr(d, 1.0)  
         T[i, j] = float(t)
         total_T += float(t)
 
@@ -76,7 +76,7 @@ def graph_to_mats(G: nx.DiGraph) -> Tuple[torch.Tensor, torch.Tensor, List[int],
 
     return torch.from_numpy(A), torch.from_numpy(T), widths, s, float(total_T)
 
-# ---------- 扫描训练文件 ----------
+
 def load_graph_files(data_dir: Path) -> List[Path]:
     data_dir = Path(data_dir)
     if data_dir.is_file():
@@ -113,3 +113,4 @@ class GraphStructureDataset5(Dataset):
 
 def graph_total_time(G: nx.DiGraph) -> float:
     return sum(edge_time_from_attr(d, 1.0) for _, _, d in G.edges(data=True))
+
